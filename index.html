@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>五十音表 — タップで発音</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Zen+Maru+Gothic:wght@400;700&display=swap">
+<style>
+:root{
+  --bg:#e9eef4; --panel:#f8fafc; --ink:#14213d; --sub:#5b6b85; --line:#c8d2e0;
+  --accent:#2c4a8c; --accent-ink:#fff; --play:#f2c14e;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0f1624; --panel:#18223a; --ink:#e8edf7; --sub:#98a6c2; --line:#2c3a58;
+    --accent:#7f9fe6; --accent-ink:#0f1624; --play:#e0aa2e;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0f1624; --panel:#18223a; --ink:#e8edf7; --sub:#98a6c2; --line:#2c3a58;
+  --accent:#7f9fe6; --accent-ink:#0f1624; --play:#e0aa2e;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif;line-height:1.6}
+main{max-width:920px;margin:0 auto;padding:20px 16px 40px}
+h1{font-family:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;font-size:1.9rem;margin:0 0 4px;letter-spacing:.08em}
+.lead{margin:0 0 18px;color:var(--sub);font-size:.95rem}
+.compose{position:sticky;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:5;display:flex;align-items:center;gap:10px;background:var(--panel);border:1px solid var(--accent);border-radius:14px;padding:10px 12px;margin-bottom:16px}
+.compose #text{flex:1;min-width:0;min-height:2.6rem;font-family:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;font-weight:700;font-size:1.7rem;line-height:1.5;word-break:break-all}
+.compose #text:empty::before{content:"ここに文字が並びます";font-family:"Zen Maru Gothic",sans-serif;font-weight:400;font-size:.95rem;color:var(--sub)}
+.tools{display:flex;gap:6px;flex:none}
+.tools button{font:inherit;font-size:.85rem;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:6px 10px;cursor:pointer}
+.tools button.main{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.tools button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+@media (max-width:640px){.compose{flex-direction:column;align-items:stretch}.tools{justify-content:flex-end}}
+.bar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-bottom:16px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel)}
+.seg button{font:inherit;font-size:.9rem;border:0;background:transparent;color:var(--ink);padding:7px 14px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);font-weight:700}
+.opt{display:flex;align-items:center;gap:8px;font-size:.9rem;color:var(--sub)}
+.opt input[type=range]{width:110px;accent-color:var(--accent)}
+.opt select{font:inherit;font-size:.9rem;max-width:230px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--ink);padding:6px 8px}
+.opt select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.opt input[type=checkbox]{accent-color:var(--accent);width:16px;height:16px}
+.words{margin-bottom:16px}
+.words-head{display:flex;justify-content:space-between;font-size:.9rem;color:var(--sub);margin-bottom:6px}
+.wlist{display:flex;flex-wrap:wrap;gap:8px}
+.wlist:empty::before{content:"入力欄の文字を「登録」で保存できます（10個まで）";font-size:.9rem;color:var(--sub)}
+.chip{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;background:var(--panel);overflow:hidden}
+.chip .word{font-family:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;font-weight:700;font-size:1.15rem;border:0;background:transparent;color:var(--ink);padding:6px 6px 6px 14px;cursor:pointer}
+.chip .del,.chip .edit{font:inherit;border:0;background:transparent;color:var(--sub);padding:6px;cursor:pointer}
+.chip .del{padding-right:12px}
+.chip.editing{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.chip .word.playing{background:var(--play);color:#14213d}
+.chip button:focus-visible{outline:3px solid var(--accent);outline-offset:-3px}
+.numrow{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:10px;margin-bottom:12px}
+.numrow .cell{aspect-ratio:auto;height:56px;min-width:0;border-radius:10px}
+.numrow .cell .k{font-size:clamp(1.1rem,3.6vw,1.8rem)}
+@media (max-width:640px){.numrow{padding:8px;gap:4px}.numrow .cell{height:48px}}
+.chart{display:flex;flex-direction:row-reverse;gap:8px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;justify-content:center}
+.chart.ltr{flex-direction:row}
+.chart.num{flex-direction:row}
+.col{display:flex;flex-direction:column;gap:8px;flex:1 1 0;min-width:0;max-width:84px}
+.head{text-align:center;font-size:.8rem;color:var(--sub);height:1.3em}
+.cell,.gap{aspect-ratio:1/1.05;border-radius:10px}
+.cell{display:flex;flex-direction:column;align-items:center;justify-content:center;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer;padding:0;font-family:inherit;transition:background .12s,transform .12s}
+.cell:hover{border-color:var(--accent)}
+.cell:active{transform:scale(.96)}
+.cell:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.cell .k{font-family:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;font-weight:700;font-size:clamp(1.5rem,4.6vw,2.4rem);line-height:1.1}
+.cell .r{font-size:.72rem;color:var(--sub);height:1em;line-height:1}
+.hide-r .cell .r{visibility:hidden}
+.cell.two .k{font-size:clamp(1.2rem,3.6vw,1.8rem)}
+.cell.playing{background:var(--play);border-color:var(--play);color:#14213d}
+.cell.playing .r{color:#14213d}
+.note{margin-top:14px;font-size:.88rem;color:var(--sub)}
+.warn{color:#b3261e}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .warn{color:#ff8a80}}
+@media (max-width:640px){
+  .chart,.chart.ltr,.chart.num{flex-direction:column;padding:10px;gap:6px}
+  .col{flex-direction:row;max-width:none;align-items:center;gap:6px}
+  .head{width:2.6em;height:auto;flex:none;text-align:left}
+  .cell,.gap{flex:1 1 0;min-width:0;aspect-ratio:auto;height:62px}
+}
+.cell,.tools button,.seg button,.chip button{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.cell,.chip .word,.tools button,.seg button{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.qr{display:flex;gap:20px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:20px}
+.qrbox{background:#fff;color:#14213d;padding:10px;border-radius:10px;line-height:0;flex:none;font-size:.85rem}
+.qrbox img{display:block;max-width:100%;height:auto}
+.qrtext{flex:1;min-width:0;font-size:.9rem;color:var(--sub)}
+.qrtext strong{color:var(--ink);font-size:1rem}
+.qrtext p{margin:4px 0 8px}
+.qrtext input{width:100%;font:inherit;font-size:.85rem;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);padding:8px}
+.qrtext .small{font-size:.8rem;margin:8px 0 0}
+@media (max-width:640px){.qr{flex-direction:column;align-items:flex-start}}
+@media (min-width:768px){
+  main{max-width:1040px;padding:28px 24px 48px}
+  h1{font-size:2.3rem}
+  .col{max-width:104px;gap:10px}
+  .chart{gap:12px;padding:20px}
+  .cell .k{font-size:clamp(2rem,4.2vw,3rem)}
+  .cell.two .k{font-size:clamp(1.6rem,3.2vw,2.2rem)}
+  .numrow{gap:10px;padding:14px}
+  .numrow .cell{height:72px}
+  .numrow .cell .k{font-size:2.2rem}
+  .compose #text{font-size:2.1rem}
+  .seg button{font-size:1rem;padding:10px 18px}
+  .tools button{font-size:.95rem;padding:10px 14px}
+}
+@media (pointer:coarse){
+  .seg button,.tools button{min-height:44px}
+  .chip button{min-height:40px}
+  .opt input[type=checkbox]{width:22px;height:22px}
+  .opt input[type=range]{height:32px}
+}
+@media (prefers-reduced-motion:reduce){.cell{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <h1>五十音表</h1>
+  <p class="lead">文字をタップすると、その音が再生され、上の欄に文字が追加されます。</p>
+
+  <div class="compose">
+    <div id="text" aria-live="polite"></div>
+    <div class="tools">
+      <button type="button" class="main" id="playAll">読み上げ</button>
+      <button type="button" id="save">登録</button>
+      <button type="button" id="overwrite" hidden>上書き</button>
+      <button type="button" id="back">1文字消す</button>
+      <button type="button" id="clear">すべて消す</button>
+    </div>
+  </div>
+
+  <section class="words" aria-label="登録した単語">
+    <div class="words-head"><span>登録した単語（タップで読み上げ）</span><span id="wcount">0/10</span></div>
+    <div id="wlist" class="wlist"></div>
+  </section>
+
+  <div class="bar">
+    <div class="seg" role="group" aria-label="文字の種類" id="scriptSeg">
+      <button data-v="hira" aria-pressed="true">ひらがな</button>
+      <button data-v="kata" aria-pressed="false">カタカナ</button>
+    </div>
+    <div class="seg" role="group" aria-label="表の種類" id="setSeg">
+      <button data-v="sei" aria-pressed="true">清音</button>
+      <button data-v="daku" aria-pressed="false">濁音・半濁音</button>
+      <button data-v="you" aria-pressed="false">拗音</button>
+    </div>
+  </div>
+  <div class="bar">
+    <label class="opt"><input type="checkbox" id="rtl" checked>右から左（伝統の並び）</label>
+    <label class="opt">速さ<input type="range" id="rate" min="0.5" max="1.2" step="0.1" value="0.8"></label>
+    <label class="opt">声<select id="voice" disabled><option>読み込み中…</option></select></label>
+  </div>
+
+  <div id="numrow" class="numrow" role="group" aria-label="数字"></div>
+  <div id="chart" class="chart" aria-live="off"></div>
+  <p class="note" id="note"></p>
+
+  <section class="qr" aria-label="このページのQRコード">
+    <div id="qrbox" class="qrbox"></div>
+    <div class="qrtext">
+      <strong>iPadやスマホで開く</strong>
+      <p>カメラでQRコードを読み取ると、このページが開きます。</p>
+      <input type="url" id="qrurl" value="https://claude.ai/artifact/PEedAet3T9x8uA1wrK72Gg" aria-label="QRコードにするURL" spellcheck="false">
+      <p class="small">※ 自分以外の人が開く場合は、先にこのページの共有設定をオンにしてください。</p>
+    </div>
+  </section>
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+// 各列: [行名, かな(_は空き), ローマ字]
+var SEI = [
+  ["あ行","あいうえお","a i u e o"],
+  ["か行","かきくけこ","ka ki ku ke ko"],
+  ["さ行","さしすせそ","sa shi su se so"],
+  ["た行","たちつてと","ta chi tsu te to"],
+  ["な行","なにぬねの","na ni nu ne no"],
+  ["は行","はひふへほ","ha hi fu he ho"],
+  ["ま行","まみむめも","ma mi mu me mo"],
+  ["や行","や_ゆ_よ","ya _ yu _ yo"],
+  ["ら行","らりるれろ","ra ri ru re ro"],
+  ["わ行","わ___を","wa _ _ _ wo"],
+  ["他","んっー__","n 促音 長音 _ _"]
+];
+var DAKU = [
+  ["が行","がぎぐげご","ga gi gu ge go"],
+  ["ざ行","ざじずぜぞ","za ji zu ze zo"],
+  ["だ行","だぢづでど","da ji zu de do"],
+  ["ば行","ばびぶべぼ","ba bi bu be bo"],
+  ["ぱ行","ぱぴぷぺぽ","pa pi pu pe po"]
+];
+
+var YOU = [
+  ["き","きゃきゅきょ","kya kyu kyo"],
+  ["し","しゃしゅしょ","sha shu sho"],
+  ["ち","ちゃちゅちょ","cha chu cho"],
+  ["に","にゃにゅにょ","nya nyu nyo"],
+  ["ひ","ひゃひゅひょ","hya hyu hyo"],
+  ["み","みゃみゅみょ","mya myu myo"],
+  ["り","りゃりゅりょ","rya ryu ryo"],
+  ["ぎ","ぎゃぎゅぎょ","gya gyu gyo"],
+  ["じ","じゃじゅじょ","ja ju jo"],
+  ["び","びゃびゅびょ","bya byu byo"],
+  ["ぴ","ぴゃぴゅぴょ","pya pyu pyo"]
+];
+
+var NUM = [
+  ["0–4","０１２３４","zero ichi ni san yon"],
+  ["5–9","５６７８９","go roku nana hachi kyuu"]
+];
+
+var state = { script: "hira", set: "sei" };
+var chart = document.getElementById("chart");
+var note = document.getElementById("note");
+var voice = null, current = null;
+
+function toKata(s){
+  return s.replace(/[\u3041-\u3096]/g, function(c){ return String.fromCharCode(c.charCodeAt(0) + 0x60); });
+}
+
+function render(){
+  var data = { sei: SEI, daku: DAKU, you: YOU }[state.set];
+  var pairs = state.set === "you";
+  chart.innerHTML = "";
+  data.forEach(function(col){
+    var kana = Array.from(col[1]), rom = col[2].split(" ");
+    var c = document.createElement("div"); c.className = "col";
+    var units = pairs ? col[1].match(/.[ゃゅょ]/g) : kana;
+    units.forEach(function(k, i){
+      if (k === "_") { var g = document.createElement("div"); g.className = "gap"; c.appendChild(g); return; }
+      var ch = state.script === "kata" ? toKata(k) : k;
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "cell" + (pairs ? " two" : ""); b.dataset.k = ch;
+      b.setAttribute("aria-label", ch + "（" + rom[i] + "）");
+      b.innerHTML = '<span class="k"></span>';
+      b.firstChild.textContent = ch;
+      c.appendChild(b);
+    });
+    chart.appendChild(c);
+  });
+}
+
+var sel = document.getElementById("voice");
+var jaVoices = [];
+function pickVoice(){
+  if (!("speechSynthesis" in window)) return;
+  var all = speechSynthesis.getVoices();
+  jaVoices = all.filter(function(v){ return /^ja/i.test(v.lang); });
+  sel.innerHTML = "";
+  if (!jaVoices.length) {
+    var o0 = document.createElement("option"); o0.textContent = "日本語音声なし"; sel.appendChild(o0);
+    sel.disabled = true; voice = null;
+    if (all.length) note.innerHTML = '<span class="warn">日本語の音声が見つかりません。端末の設定で日本語の読み上げ音声を追加してください。</span>';
+    return;
+  }
+  jaVoices.forEach(function(v){
+    var o = document.createElement("option");
+    o.value = v.voiceURI;
+    o.textContent = v.name + (v.localService ? "" : "（オンライン）");
+    sel.appendChild(o);
+  });
+  var saved = null;
+  try { saved = localStorage.getItem("gojuonVoice"); } catch (e) {}
+  voice = jaVoices.find(function(v){ return v.voiceURI === saved; })
+    || jaVoices.find(function(v){ return /kyoko|o-ren|google|haruka|nanami|female/i.test(v.name); })
+    || jaVoices[0];
+  sel.value = voice.voiceURI; sel.disabled = false; note.textContent = "";
+}
+sel.addEventListener("change", function(){
+  voice = jaVoices.find(function(v){ return v.voiceURI === sel.value; }) || voice;
+  try { localStorage.setItem("gojuonVoice", sel.value); } catch (e) {}
+  speak("こんにちは", sel);
+});
+
+function speak(ch, el){
+  if (!("speechSynthesis" in window)) {
+    note.innerHTML = '<span class="warn">このブラウザは音声読み上げに対応していません。</span>'; return;
+  }
+  var busy = speechSynthesis.speaking || speechSynthesis.pending;
+  if (busy) speechSynthesis.cancel();
+  if (!voice) pickVoice();
+  if (current) current.classList.remove("playing");
+  var u = new SpeechSynthesisUtterance(ch);
+  u.lang = "ja-JP";
+  if (voice) u.voice = voice;
+  u.rate = parseFloat(document.getElementById("rate").value);
+  current = el; el.classList.add("playing");
+  var done = function(){ el.classList.remove("playing"); };
+  u.onend = done; u.onerror = done;
+  if (busy) setTimeout(function(){ speechSynthesis.speak(u); }, 80);
+  else speechSynthesis.speak(u);
+}
+
+var textEl = document.getElementById("text");
+var SAY = { "っ": "あっ", "ッ": "アッ", "ー": "あー", "０": "ゼロ", "４": "よん", "７": "なな", "９": "きゅう" };
+var numrow = document.getElementById("numrow");
+"０１２３４５６７８９".split("").forEach(function(d){
+  var nb = document.createElement("button"); nb.type = "button"; nb.className = "cell"; nb.dataset.k = d;
+  nb.setAttribute("aria-label", d);
+  nb.innerHTML = '<span class="k"></span>'; nb.firstChild.textContent = d;
+  numrow.appendChild(nb);
+});
+function onCell(e){
+  var b = e.target.closest(".cell");
+  if (!b) return;
+  textEl.textContent += b.dataset.k;
+  speak(SAY[b.dataset.k] || b.dataset.k, b);
+}
+chart.addEventListener("click", onCell);
+numrow.addEventListener("click", onCell);
+document.getElementById("playAll").addEventListener("click", function(){
+  if (textEl.textContent) speak(textEl.textContent, this);
+});
+document.getElementById("back").addEventListener("click", function(){
+  textEl.textContent = Array.from(textEl.textContent).slice(0, -1).join("");
+});
+document.getElementById("clear").addEventListener("click", function(){
+  textEl.textContent = ""; speechSynthesis.cancel();
+});
+
+var MAX = 10, words = [], editIndex = null;
+var wlist = document.getElementById("wlist"), wcount = document.getElementById("wcount");
+try {
+  var stored = JSON.parse(localStorage.getItem("gojuonWords") || "[]");
+  if (Array.isArray(stored)) words = stored.filter(function(w){ return typeof w === "string" && w; }).slice(0, MAX);
+} catch (e) {}
+function saveWords(){ try { localStorage.setItem("gojuonWords", JSON.stringify(words)); } catch (e) {} }
+function renderWords(){
+  wlist.innerHTML = "";
+  words.forEach(function(w, i){
+    var chip = document.createElement("span"); chip.className = "chip" + (i === editIndex ? " editing" : "");
+    var b = document.createElement("button"); b.type = "button"; b.className = "word"; b.dataset.i = i; b.textContent = w;
+    var ed = document.createElement("button"); ed.type = "button"; ed.className = "edit"; ed.dataset.i = i;
+    ed.setAttribute("aria-label", w + "を入力欄に呼び戻して編集"); ed.textContent = "✎";
+    var x = document.createElement("button"); x.type = "button"; x.className = "del"; x.dataset.i = i;
+    x.setAttribute("aria-label", w + "を削除"); x.textContent = "×";
+    chip.appendChild(b); chip.appendChild(ed); chip.appendChild(x); wlist.appendChild(chip);
+  });
+  wcount.textContent = words.length + "/" + MAX;
+}
+function warn(msg){ note.innerHTML = '<span class="warn"></span>'; note.firstChild.textContent = msg; }
+function setEdit(i){
+  editIndex = i;
+  document.getElementById("overwrite").hidden = (i === null);
+  renderWords();
+}
+document.getElementById("overwrite").addEventListener("click", function(){
+  if (editIndex === null) return;
+  var t = textEl.textContent;
+  if (!t) return warn("上書きする内容が空です。");
+  var dup = words.indexOf(t);
+  if (dup !== -1 && dup !== editIndex) return warn("「" + t + "」はすでに登録されています。");
+  words[editIndex] = t; saveWords(); note.textContent = ""; setEdit(null);
+});
+document.getElementById("clear").addEventListener("click", function(){
+  if (editIndex !== null) { setEdit(null); note.textContent = ""; }
+});
+document.getElementById("save").addEventListener("click", function(){
+  var t = textEl.textContent;
+  if (!t) return warn("登録する文字を、先に入力欄へ入れてください。");
+  if (words.indexOf(t) !== -1) return warn("「" + t + "」はすでに登録されています。");
+  if (words.length >= MAX) return warn("登録は" + MAX + "個までです。不要な単語の×を押して消してください。");
+  words.push(t); saveWords(); renderWords(); note.textContent = "";
+});
+wlist.addEventListener("click", function(e){
+  var w = e.target.closest(".word"), d = e.target.closest(".del"), ed = e.target.closest(".edit");
+  if (w) speak(words[+w.dataset.i], w);
+  else if (ed) {
+    var i = +ed.dataset.i;
+    textEl.textContent = words[i]; setEdit(i);
+    note.textContent = "「" + words[i] + "」を編集中です。「上書き」で更新、「登録」で別の単語として追加します。";
+  } else if (d) {
+    var j = +d.dataset.i;
+    words.splice(j, 1); saveWords();
+    if (editIndex === j) setEdit(null);
+    else { if (editIndex !== null && j < editIndex) editIndex--; renderWords(); }
+  }
+});
+renderWords();
+
+function seg(id, key){
+  document.getElementById(id).addEventListener("click", function(e){
+    var b = e.target.closest("button"); if (!b) return;
+    state[key] = b.dataset.v;
+    this.querySelectorAll("button").forEach(function(x){ x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+    render();
+  });
+}
+seg("scriptSeg", "script"); seg("setSeg", "set");
+
+
+document.getElementById("rtl").addEventListener("change", function(){
+  chart.classList.toggle("ltr", !this.checked);
+});
+
+if ("speechSynthesis" in window) {
+  pickVoice();
+  speechSynthesis.addEventListener("voiceschanged", pickVoice);
+  var tries = 0;
+  var iv = setInterval(function(){
+    if (jaVoices.length || ++tries > 20) { clearInterval(iv); return; }
+    pickVoice();
+  }, 300);
+}
+render();
+
+var qrbox = document.getElementById("qrbox"), qrurl = document.getElementById("qrurl");
+function drawQR(){
+  var t = qrurl.value.trim();
+  qrbox.innerHTML = "";
+  if (!t) return;
+  if (typeof QRCode === "undefined") { qrbox.style.lineHeight = "1.4"; qrbox.textContent = "QRコードを読み込めませんでした。"; return; }
+  try {
+    new QRCode(qrbox, { text: t, width: 176, height: 176, colorDark: "#14213d", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M });
+  } catch (e) { qrbox.style.lineHeight = "1.4"; qrbox.textContent = "QRコードを作れませんでした。"; }
+}
+qrurl.addEventListener("input", drawQR);
+drawQR();
+</script>
+</body>
+</html>
