@@ -116,6 +116,34 @@ h1{font-family:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;font-s
   .opt input[type=range]{height:32px}
 }
 @media (prefers-reduced-motion:reduce){.cell{transition:none}}
+html,body{height:100%;overflow:hidden}
+main{height:100%;max-width:1040px;display:flex;flex-direction:column;gap:6px;padding:8px 12px}
+h1{font-size:1.2rem;margin:0}
+.lead{display:none}
+.compose{position:static;margin:0;padding:6px 10px;gap:8px}
+.compose #text{min-height:0;font-size:1.3rem;line-height:1.3}
+.tools button{padding:4px 8px;min-height:32px;font-size:.8rem}
+.words{margin:0}
+.words-head{margin-bottom:2px;font-size:.8rem}
+.wlist{max-height:64px;overflow-y:auto;gap:4px}
+.chip .word{font-size:1rem;padding:2px 4px 2px 10px}
+.chip button{min-height:0}
+.bar{margin:0;gap:4px 14px}
+.seg button{padding:4px 12px;min-height:32px;font-size:.85rem}
+.opt{font-size:.8rem}
+.numrow{margin:0;padding:4px;gap:4px;flex:none;direction:rtl}
+.numrow .cell{height:clamp(30px,5.5vh,48px)}
+.numrow .cell .k{font-size:1.2rem}
+.chart{flex:1;min-height:0;padding:6px;gap:4px}
+.col{gap:4px}
+.head{height:auto;font-size:.7rem;flex:none}
+.cell,.gap{aspect-ratio:auto;flex:1 1 0;min-height:0;height:auto}
+.cell .k{font-size:clamp(1rem,3.4vh,2rem)}
+.cell.two .k{font-size:clamp(.9rem,3vh,1.6rem)}
+.cell .r{display:none}
+.note{margin:0;font-size:.8rem}
+@media (min-width:641px){.col{max-width:110px}}
+@media (max-width:640px){.col{max-width:none}.compose{flex-direction:row}}
 </style>
 </head>
 <body>
@@ -145,13 +173,13 @@ h1{font-family:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;font-s
       <button data-v="kata" aria-pressed="false">カタカナ</button>
     </div>
     <div class="seg" role="group" aria-label="表の種類" id="setSeg">
-      <button data-v="sei" aria-pressed="true">清音</button>
-      <button data-v="daku" aria-pressed="false">濁音・半濁音</button>
-      <button data-v="you" aria-pressed="false">拗音</button>
+      <button data-v="sei" aria-pressed="true">あ</button>
+      <button data-v="daku" aria-pressed="false">あ゛</button>
+      <button data-v="you" aria-pressed="false">あぁ</button>
+      <button data-v="ext" aria-pressed="false">あ゛ぁ</button>
     </div>
   </div>
   <div class="bar">
-    <label class="opt"><input type="checkbox" id="rtl" checked>右から左（伝統の並び）</label>
     <label class="opt">速さ<input type="range" id="rate" min="0.5" max="1.2" step="0.1" value="0.8"></label>
     <label class="opt">声<select id="voice" disabled><option>読み込み中…</option></select></label>
   </div>
@@ -160,18 +188,8 @@ h1{font-family:"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif;font-s
   <div id="chart" class="chart" aria-live="off"></div>
   <p class="note" id="note"></p>
 
-  <section class="qr" aria-label="このページのQRコード">
-    <div id="qrbox" class="qrbox"></div>
-    <div class="qrtext">
-      <strong>iPadやスマホで開く</strong>
-      <p>カメラでQRコードを読み取ると、このページが開きます。</p>
-      <input type="url" id="qrurl" value="https://claude.ai/artifact/PEedAet3T9x8uA1wrK72Gg" aria-label="QRコードにするURL" spellcheck="false">
-      <p class="small">※ 自分以外の人が開く場合は、先にこのページの共有設定をオンにしてください。</p>
-    </div>
-  </section>
 </main>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 // 各列: [行名, かな(_は空き), ローマ字]
 var SEI = [
@@ -184,8 +202,7 @@ var SEI = [
   ["ま行","まみむめも","ma mi mu me mo"],
   ["や行","や_ゆ_よ","ya _ yu _ yo"],
   ["ら行","らりるれろ","ra ri ru re ro"],
-  ["わ行","わ___を","wa _ _ _ wo"],
-  ["他","んっー__","n 促音 長音 _ _"]
+  ["わ行","わをんーっ","wa wo n 長音 促音"]
 ];
 var DAKU = [
   ["が行","がぎぐげご","ga gi gu ge go"],
@@ -197,16 +214,39 @@ var DAKU = [
 
 var YOU = [
   ["き","きゃきゅきょ","kya kyu kyo"],
-  ["し","しゃしゅしょ","sha shu sho"],
-  ["ち","ちゃちゅちょ","cha chu cho"],
+  ["し","しゃ しゅ しょ しぇ","sha shu sho she"],
+  ["ち","ちゃ ちゅ ちょ ちぇ","cha chu cho che"],
   ["に","にゃにゅにょ","nya nyu nyo"],
   ["ひ","ひゃひゅひょ","hya hyu hyo"],
   ["み","みゃみゅみょ","mya myu myo"],
   ["り","りゃりゅりょ","rya ryu ryo"],
-  ["ぎ","ぎゃぎゅぎょ","gya gyu gyo"],
-  ["じ","じゃじゅじょ","ja ju jo"],
-  ["び","びゃびゅびょ","bya byu byo"],
-  ["ぴ","ぴゃぴゅぴょ","pya pyu pyo"]
+  ["ふ","ふぁ ふぃ _ ふぇ ふぉ","fa fi _ fe fo"],
+  ["う","うぃ _ _ うぇ うぉ","wi _ _ we wo"],
+
+
+  ["て","てぃ","ti"],
+
+
+
+
+
+];
+
+var EXT = [
+  ["ぎ","ぎゃ ぎゅ ぎょ","gya gyu gyo"],
+  ["じ","じゃ じゅ じょ じぇ","ja ju jo je"],
+  ["ぢ","ぢゃ ぢゅ ぢょ","ja ju jo"],
+  ["び","びゃ びゅ びょ","bya byu byo"],
+  ["ぴ","ぴゃ ぴゅ ぴょ","pya pyu pyo"],
+  ["ゔ","ゔぁ ゔぃ ゔ ゔぇ ゔぉ","va vi vu ve vo"],
+
+
+
+  ["ぐ","ぐぁ ぐぃ _ ぐぇ ぐぉ","gwa gwi _ gwe gwo"],
+
+  ["で","でぃ でゅ","di dyu"],
+
+
 ];
 
 var NUM = [
@@ -224,13 +264,14 @@ function toKata(s){
 }
 
 function render(){
-  var data = { sei: SEI, daku: DAKU, you: YOU }[state.set];
-  var pairs = state.set === "you";
+  var data = { sei: SEI, daku: DAKU, you: YOU, ext: EXT }[state.set];
+  var pairs = state.set === "you" || state.set === "ext";
+  document.getElementById("numrow").style.display = state.set === "sei" ? "" : "none";
   chart.innerHTML = "";
   data.forEach(function(col){
     var kana = Array.from(col[1]), rom = col[2].split(" ");
     var c = document.createElement("div"); c.className = "col";
-    var units = pairs ? col[1].match(/.[ゃゅょ]/g) : kana;
+    var units = pairs ? (col[1].indexOf(" ") >= 0 ? col[1].split(" ") : col[1].match(/.[ゃゅょぁぃぅぇぉ]/g)) : kana;
     units.forEach(function(k, i){
       if (k === "_") { var g = document.createElement("div"); g.className = "gap"; c.appendChild(g); return; }
       var ch = state.script === "kata" ? toKata(k) : k;
@@ -394,9 +435,6 @@ function seg(id, key){
 seg("scriptSeg", "script"); seg("setSeg", "set");
 
 
-document.getElementById("rtl").addEventListener("change", function(){
-  chart.classList.toggle("ltr", !this.checked);
-});
 
 if ("speechSynthesis" in window) {
   pickVoice();
@@ -409,18 +447,6 @@ if ("speechSynthesis" in window) {
 }
 render();
 
-var qrbox = document.getElementById("qrbox"), qrurl = document.getElementById("qrurl");
-function drawQR(){
-  var t = qrurl.value.trim();
-  qrbox.innerHTML = "";
-  if (!t) return;
-  if (typeof QRCode === "undefined") { qrbox.style.lineHeight = "1.4"; qrbox.textContent = "QRコードを読み込めませんでした。"; return; }
-  try {
-    new QRCode(qrbox, { text: t, width: 176, height: 176, colorDark: "#14213d", colorLight: "#ffffff", correctLevel: QRCode.CorrectLevel.M });
-  } catch (e) { qrbox.style.lineHeight = "1.4"; qrbox.textContent = "QRコードを作れませんでした。"; }
-}
-qrurl.addEventListener("input", drawQR);
-drawQR();
 </script>
 </body>
 </html>
